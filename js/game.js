@@ -4,11 +4,10 @@ let currentRoom = 0;
 let currentQuestion = 0;
 let hintsUsed = 0;
 let score = 0;
+let isTransitioning = false; // Prevent multiple clicks during transition
 
-// Start the game - this function is called from the HTML button
+// Start the game
 function startGame() {
-    console.log("startGame called"); // Debug log
-    
     const nameInput = document.getElementById('player-name');
     const name = nameInput.value.trim();
     
@@ -23,15 +22,14 @@ function startGame() {
     score = 0;
     hintsUsed = 0;
     
-    // Hide main menu, show game screen
     document.getElementById('main-menu').classList.add('hidden');
     document.getElementById('game-screen').classList.remove('hidden');
     
-    loadRoom();
+    displayRoom();
 }
 
-// Load current room
-function loadRoom() {
+// Display current room and first question
+function displayRoom() {
     if (currentRoom >= rooms.length) {
         showVictory();
         return;
@@ -45,12 +43,12 @@ function loadRoom() {
     document.getElementById('feedback').textContent = "";
     document.getElementById('hint-area').classList.add('hidden');
     
-    loadQuestion();
-    updateProgress();
+    displayQuestion();
 }
 
-// Load current question
-function loadQuestion() {
+// Display current question
+function displayQuestion() {
+    // If already past all rooms, show victory
     if (currentRoom >= rooms.length) {
         showVictory();
         return;
@@ -58,29 +56,43 @@ function loadQuestion() {
     
     const room = rooms[currentRoom];
     
+    // If all questions in this room are done, move to next room
     if (currentQuestion >= room.questions.length) {
-        // Room completed! Move to next
-        currentRoom++;
-        if (currentRoom >= rooms.length) {
-            showVictory();
-        } else {
-            alert(`🎉 Room ${currentRoom} completed! Moving to the next room...`);
-            loadRoom();
-        }
+        moveToNextRoom();
         return;
     }
     
     const q = room.questions[currentQuestion];
     document.getElementById('question-text').innerHTML = q.question;
     document.getElementById('current-question').textContent = `Question ${currentQuestion + 1} of ${room.questions.length}`;
+    document.getElementById('progress-bar').textContent = `${currentQuestion}/${room.questions.length}`;
     document.getElementById('answer-input').value = "";
     document.getElementById('answer-input').style.borderColor = "#6c63ff";
     document.getElementById('feedback').textContent = "";
     document.getElementById('hint-area').classList.add('hidden');
+    isTransitioning = false;
 }
 
-// Submit answer - this function is called from the HTML button
+// Move to next room
+function moveToNextRoom() {
+    currentRoom++;
+    
+    if (currentRoom >= rooms.length) {
+        showVictory();
+    } else {
+        // Show alert and then load next room
+        setTimeout(() => {
+            alert(`🎉 You completed Room ${currentRoom}! Moving to the next room...`);
+            displayRoom();
+        }, 300);
+    }
+}
+
+// Submit answer
 function submitAnswer() {
+    // Prevent double submissions during transition
+    if (isTransitioning) return;
+    
     const answerInput = document.getElementById('answer-input');
     const userAnswer = answerInput.value.trim().toLowerCase();
     const feedback = document.getElementById('feedback');
@@ -91,12 +103,18 @@ function submitAnswer() {
         return;
     }
     
+    // Safety check
     if (currentRoom >= rooms.length) {
         showVictory();
         return;
     }
     
     const room = rooms[currentRoom];
+    if (currentQuestion >= room.questions.length) {
+        moveToNextRoom();
+        return;
+    }
+    
     const q = room.questions[currentQuestion];
     const correctAnswer = q.answer.toLowerCase();
     
@@ -105,20 +123,22 @@ function submitAnswer() {
         feedback.textContent = "✅ Correct! Well done!";
         feedback.style.color = "#4caf50";
         answerInput.style.borderColor = "#4caf50";
-        score += 10 - hintsUsed; // More points for fewer hints
+        score += Math.max(5, 10 - hintsUsed); // Minimum 5 points
         
-        // Move to next question after a short delay
+        isTransitioning = true;
+        
+        // Move to next question after delay
         setTimeout(() => {
             currentQuestion++;
-            loadQuestion();
-            updateProgress();
-        }, 1000);
+            displayQuestion();
+        }, 1200);
     } else {
         // Wrong answer
         feedback.textContent = "❌ Not quite right. Try again!";
         feedback.style.color = "#ff6b6b";
         answerInput.style.borderColor = "#ff6b6b";
         answerInput.value = "";
+        answerInput.focus();
         setTimeout(() => {
             answerInput.style.borderColor = "#6c63ff";
         }, 500);
@@ -127,9 +147,12 @@ function submitAnswer() {
 
 // Show hint
 function showHint() {
+    if (isTransitioning) return;
     if (currentRoom >= rooms.length) return;
     
     const room = rooms[currentRoom];
+    if (currentQuestion >= room.questions.length) return;
+    
     const q = room.questions[currentQuestion];
     const hintArea = document.getElementById('hint-area');
     const hintText = document.getElementById('hint-text');
@@ -139,37 +162,29 @@ function showHint() {
     hintArea.classList.remove('hidden');
 }
 
-// Update progress bar
-function updateProgress() {
-    if (currentRoom >= rooms.length) {
-        document.getElementById('progress-bar').textContent = "5/5";
-        return;
-    }
-    
-    const room = rooms[currentRoom];
-    document.getElementById('progress-bar').textContent = `${currentQuestion}/${room.questions.length}`;
-}
-
 // Show victory screen
 function showVictory() {
     document.getElementById('game-screen').classList.add('hidden');
     document.getElementById('victory-screen').classList.remove('hidden');
     
-    const message = `Amazing work, ${currentPlayer}! 🏆\nYou solved all ${rooms.length} rooms with ${score} points!`;
+    const rating = score >= 40 ? "Legendary Detective" : score >= 25 ? "Master Sleuth" : "Junior Detective";
+    const message = `Amazing work, ${currentPlayer}! 🏆\nYou solved all ${rooms.length} rooms!\nScore: ${score} points\nRank: ${rating}`;
     document.getElementById('winner-message').textContent = message;
 }
 
 // Reset game
 function resetGame() {
     document.getElementById('victory-screen').classList.add('hidden');
-    document.getElementById('main-menu').classList.remove('hidden');
+    document.getElementById('main-screen').classList.remove('hidden');
     document.getElementById('player-name').value = "";
-    
-    // Clear saved game
-    localStorage.removeItem('mysteryRooms_save');
+    currentRoom = 0;
+    currentQuestion = 0;
+    score = 0;
+    hintsUsed = 0;
+    isTransitioning = false;
 }
 
-// Handle Enter key in answer input
+// Handle Enter key press
 document.addEventListener('DOMContentLoaded', function() {
     const answerInput = document.getElementById('answer-input');
     if (answerInput) {
@@ -189,5 +204,6 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
     
-    console.log("Game initialized successfully!");
+    console.log("Mystery Rooms game loaded successfully!");
+    console.log(`Total rooms available: ${rooms.length}`);
 });
