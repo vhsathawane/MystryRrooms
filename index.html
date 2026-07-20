@@ -1,11 +1,71 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mystery Rooms - Escape the Puzzles</title>
+    <link rel="stylesheet" href="css/style.css">
+</head>
 <body>
-    <button onclick="testFunction()">Test Button</button>
-    <script>
-        function testFunction() {
-            alert("JavaScript is working!");
-        }
-    </script>
+    <div id="app">
+        <!-- Header -->
+        <header>
+            <h1>🔍 Mystery Rooms</h1>
+            <p>Solve puzzles, crack codes, escape each room!</p>
+        </header>
+
+        <!-- Main Menu -->
+        <div id="main-menu" class="screen">
+            <h2>Welcome, Detective!</h2>
+            <p>Enter your name to begin your adventure:</p>
+            <input type="text" id="player-name" placeholder="Your name..." maxlength="20">
+            <button onclick="startGame()">Start Mystery</button>
+        </div>
+
+        <!-- Room View -->
+        <div id="game-screen" class="screen hidden">
+            <div class="room-header">
+                <h2 id="room-title">Room 1</h2>
+                <div class="room-progress">
+                    <span>Progress: </span>
+                    <span id="progress-bar">0/5</span>
+                </div>
+            </div>
+            
+            <div id="room-image" class="room-image">
+                <!-- Room image or description -->
+            </div>
+
+            <div id="question-area">
+                <p id="question-text">Loading question...</p>
+                
+                <div id="hint-area" class="hint hidden">
+                    <p id="hint-text"></p>
+                </div>
+                
+                <div class="answer-input">
+                    <input type="text" id="answer-input" placeholder="Enter your answer..." autocomplete="off">
+                    <button onclick="submitAnswer()">Submit</button>
+                    <button onclick="showHint()" class="hint-btn">💡 Hint</button>
+                </div>
+                
+                <p id="feedback" class="feedback"></p>
+            </div>
+
+            <div class="room-nav">
+                <span id="current-question">Question 1 of 5</span>
+            </div>
+        </div>
+
+        <!-- Victory Screen -->
+        <div id="victory-screen" class="screen hidden">
+            <h2>🎉 Congratulations!</h2>
+            <p id="winner-message"></p>
+            <button onclick="resetGame()">Play Again</button>
+        </div>
+    </div>
+
+    <script src="js/rooms.js"></script>
+    <script src="js/game.js"></script>
 </body>
 </html>
